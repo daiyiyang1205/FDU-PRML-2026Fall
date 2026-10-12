@@ -63,9 +63,9 @@ def precision_score(y_true, y_pred):
     tp, fp, _, _ = _binary_counts(y_true, y_pred)
 
     # =============== TODO (students) ===============
-
+    # 精确率：预测为正类中真正为正类的比例
+    return tp / (tp + fp + EPS)
     # ===============================================
-    raise NotImplementedError("Implement precision_score")
 
 
 def recall_score(y_true, y_pred):
@@ -90,9 +90,9 @@ def recall_score(y_true, y_pred):
     tp, _, fn, _ = _binary_counts(y_true, y_pred)
 
     # =============== TODO (students) ===============
-
+    # 召回率：真实为正类中被正确预测为正类的比例
+    return tp / (tp + fn + EPS)
     # ===============================================
-    raise NotImplementedError("Implement recall_score")
 
 
 def f1_score(y_true, y_pred):
@@ -114,7 +114,12 @@ def f1_score(y_true, y_pred):
     -----
     Use EPS to avoid division by zero when computing the score.
     """
-    # =============== TODO (students) ===============
+    tp, fp, fn, _ = _binary_counts(y_true, y_pred)
 
+    # =============== TODO (students) ===============
+    # 方案一：由 precision 与 recall 的调和平均计算
+    precision = tp / (tp + fp + EPS)
+    recall = tp / (tp + fn + EPS)
+    f1 = 2 * precision * recall / (precision + recall + EPS)
+    return f1
     # ===============================================
-    raise NotImplementedError("Implement f1_score")

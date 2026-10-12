@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from collections import Counter
 from typing import List, Tuple
 from data_generate import load_prepared_dataset
 from viz_knn import plot_k_curve, plot_decision_boundary_multi
@@ -28,24 +29,40 @@ def pairwise_dist(X_test, X_train, metric, mode):
     if metric == "l2":
         if mode == "two_loops":
             # =============== TODO (students, REQUIRED) ===============
-
+            # 双重循环：逐对计算欧式距离
+            dists = np.zeros((Nte, Ntr), dtype=np.float64)
+            for i in range(Nte):
+                for j in range(Ntr):
+                    diff = X_test[i] - X_train[j]
+                    dists[i, j] = np.sqrt(np.sum(diff * diff))
+            return dists
             # =========================================================
-            raise NotImplementedError("Implement L2 two_loops")
 
         elif mode == "no_loops":
             # =============== TODO (students, REQUIRED) ===============
-
+            # 展开平方距离：||x_i - x_j||^2 = ||x_i||^2 + ||x_j||^2 - 2 x_i·x_j
+            test_sq = np.sum(X_test ** 2, axis=1)       # (Nte,)
+            train_sq = np.sum(X_train ** 2, axis=1)     # (Ntr,)
+            cross = X_test @ X_train.T                  # (Nte, Ntr)
+            sq_dists = test_sq[:, None] + train_sq[None, :] - 2.0 * cross
+            # 数值误差可能使平方距离出现接近 0 的负值，先截断再开方
+            sq_dists = np.maximum(sq_dists, 0.0)
+            return np.sqrt(sq_dists)
             # =========================================================
-            raise NotImplementedError("Implement L2 no_loops")
 
         else:
             raise ValueError("Unknown mode for L2.")
 
     elif metric == "cosine":
         # =============== TODO (students, REQUIRED) ===============
-
+        # 余弦距离 = 1 - 余弦相似度；分母过小时用 eps 兜底
+        eps = 1e-12
+        norm_te = np.linalg.norm(X_test, axis=1)    # (Nte,)
+        norm_tr = np.linalg.norm(X_train, axis=1)   # (Ntr,)
+        denom = np.maximum(norm_te[:, None] * norm_tr[None, :], eps)
+        cosine_sim = (X_test @ X_train.T) / denom
+        return 1.0 - cosine_sim
         # ================================================
-        raise NotImplementedError("cosine distance")
     else:
         raise ValueError("metric must be 'l2' or 'cosine'.")
 
@@ -66,13 +83,16 @@ def knn_predict(X_test, X_train, y_train, k, metric, mode):
     y_pred = np.zeros(Nte, dtype=int)
 
     for i in range(Nte):
-        idx = np.argsort(dists[i])[:k]
+        idx = np.argsort(dists[i], kind="stable")[:k]
         neighbors = y_train[idx]
 
         # =============== TODO (students, REQUIRED) ===============
-
+        # 多数表决：统计 k 个近邻中各类别出现次数
+        counter = Counter(neighbors.tolist())
+        max_cnt = max(counter.values())
+        # 平票时返回最小标签
+        y_pred[i] = min(lab for lab, cnt in counter.items() if cnt == max_cnt)
         # ===========================================
-        raise NotImplementedError("Implement majority vote in knn_predict")
 
     return y_pred
 
@@ -88,9 +108,19 @@ def select_k_by_validation(X_train, y_train, X_val, y_val, ks: List[int], metric
     accs   : list of validation accuracies aligned with ks
     """
     # =============== TODO (students, REQUIRED) ===============
+    # 在 ks 上网格搜索：每个 k 在验证集上计算准确率
+    y_val = np.asarray(y_val).reshape(-1)
+    accs: List[float] = []
+    for k in ks:
+        y_pred = knn_predict(X_val, X_train, y_train, k,
+                             metric=metric, mode=mode)
+        accs.append(float(np.mean(y_pred == y_val)))
 
+    # 取验证准确率最高的 k；平票时返回最小的 k
+    max_acc = max(accs)
+    best_k = min(k for k, a in zip(ks, accs) if a == max_acc)
+    return best_k, accs
     # =========================================================
-    raise NotImplementedError("Implement select_k_by_validation")
 
 
 def run_with_visualization(metric="l2", mode="no_loops"):

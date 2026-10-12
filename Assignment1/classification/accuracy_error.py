@@ -34,9 +34,11 @@ def accuracy_score(y_true, y_pred):
         raise ValueError("y_true and y_pred must have the same length.")
 
     # =============== TODO (students) ===============
-
+    # 预测正确样本数占样本总数的比例
+    n_correct = int(np.sum(y_true == y_pred))
+    accuracy = n_correct / y_true.shape[0]
+    return float(accuracy)
     # ===============================================
-    raise NotImplementedError("Implement accuracy_score")
 
 
 def mean_squared_error(y_true, y_pred):
@@ -75,6 +77,7 @@ def mean_squared_error(y_true, y_pred):
         raise ValueError("y_true and y_pred must have the same length.")
 
     # =============== TODO (students) ===============
-
+    # 均方误差：所有样本误差平方的平均值
+    mse = np.mean((y_true - y_pred) ** 2)
+    return float(mse)
     # ===============================================
-    raise NotImplementedError("Implement mean_squared_error")
